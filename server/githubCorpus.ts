@@ -24,10 +24,10 @@ export async function getGitHub(base44) {
 }
 
 async function ensureRepo(token, owner) {
-  const r = await fetch(\`\${API}/repos/\${owner}/\${REPO_NAME}\`, { headers: headers(token) });
+  const r = await fetch(API + "/repos/" + owner + "/" + REPO_NAME, { headers: headers(token) });
   if (r.status === 200) return;
   if (r.status === 404) {
-    await fetch(\`\${API}/user/repos\`, {
+    await fetch(API + "/user/repos", {
       method: "POST",
       headers: { ...headers(token), "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,21 +44,21 @@ async function ensureRepo(token, owner) {
 
 export async function readFile(base44, path) {
   const { token, owner } = await getGitHub(base44);
-  const r = await fetch(\`\${API}/repos/\${owner}/\${REPO_NAME}/contents/\${path}\`, { headers: headers(token) });
+  const r = await fetch(API + "/repos/" + owner + "/" + REPO_NAME + "/contents/" + path, { headers: headers(token) });
   if (r.status === 404) return null;
   if (!r.ok) throw new Error("GitHub read failed: " + r.status);
   const data = await r.json();
-  const content = atob(data.content.replace(/\\n/g, ""));
+  const content = atob(data.content.replace(/\n/g, ""));
   return { content: JSON.parse(content), sha: data.sha };
 }
 
 export async function writeFile(base44, path, obj, message) {
   const { token, owner } = await getGitHub(base44);
-  const existing = await fetch(\`\${API}/repos/\${owner}/\${REPO_NAME}/contents/\${path}\`, { headers: headers(token) });
+  const existing = await fetch(API + "/repos/" + owner + "/" + REPO_NAME + "/contents/" + path, { headers: headers(token) });
   let sha;
   if (existing.status === 200) { const e = await existing.json(); sha = e.sha; }
   const b64 = btoa(JSON.stringify(obj, null, 2));
-  const r = await fetch(\`\${API}/repos/\${owner}/\${REPO_NAME}/contents/\${path}\`, {
+  const r = await fetch(API + "/repos/" + owner + "/" + REPO_NAME + "/contents/" + path, {
     method: "PUT",
     headers: { ...headers(token), "Content-Type": "application/json" },
     body: JSON.stringify({ message, content: b64, ...(sha ? { sha } : {}) })
@@ -71,5 +71,5 @@ export async function writeFile(base44, path, obj, message) {
 }
 
 export function repoUrl(owner) {
-  return \`https://github.com/\${owner}/\${REPO_NAME}\`;
+  return "https://github.com/" + owner + "/" + REPO_NAME;
 }
